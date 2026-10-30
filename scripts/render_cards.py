@@ -31,6 +31,7 @@ import io
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -56,12 +57,36 @@ THEMES = {
                 accent_soft="#FDEBCB", panel="#FFFFFF", line="#F0E4C8"),
 }
 
-BROWSERS = [
+BROWSER_CANDIDATES = [
+    # Windows
     r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
     r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
     r"C:\Program Files\Google\Chrome\Application\chrome.exe",
     r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+    # macOS
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
+    "/Applications/Chromium.app/Contents/MacOS/Chromium",
+    # Linux
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+    "/usr/bin/microsoft-edge",
 ]
+
+BROWSER_COMMANDS = ("google-chrome", "chromium", "chromium-browser", "microsoft-edge", "msedge")
+
+
+def find_browser():
+    """按 Windows 绝对路径 → macOS → Linux 路径 → PATH 命令的顺序找可用浏览器。"""
+    for b in BROWSER_CANDIDATES:
+        if os.path.isfile(b):
+            return b
+    for name in BROWSER_COMMANDS:
+        p = shutil.which(name)
+        if p:
+            return p
+    return None
 
 
 # ---------- 文本处理 ----------
@@ -244,13 +269,9 @@ def build_html(card, idx, total, theme, brand, size, show_page=True, template=TE
 # ---------- 截图 ----------
 def screenshot_browser(html_path, out_path, size, scale=1, timeout=90):
     w, h = size
-    exe = None
-    for b in BROWSERS:
-        if os.path.isfile(b):
-            exe = b
-            break
+    exe = find_browser()
     if not exe:
-        return False, "未找到 Edge / Chrome"
+        return False, "未找到 Edge / Chrome（可用 playwright 回退，或安装其中之一）"
     profile = tempfile.mkdtemp(prefix="cardshot_")
     cmd = [
         exe, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-sandbox",
