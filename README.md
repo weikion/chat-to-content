@@ -102,9 +102,14 @@ python scripts/extract_session.py --list 10
 
 # 指定某个会话文件
 python scripts/extract_session.py --session-file "/path/to/session.jsonl" --out-dir ./outputs/_source
+
+# 会话记录不在默认位置（~/.workbuddy/projects）时，显式指定根目录
+python scripts/extract_session.py --projects-root "D:/data/projects" --check
 ```
 
 `--check` 的判定门槛：用户发言 ≥ 1 条、助手回复 ≥ 1 条、有效正文 ≥ 200 字，三者齐了才返回 `ok: true`，否则返回具体原因。
+
+会话根目录的优先级：`--projects-root` > 环境变量 `WORKBUDDY_PROJECTS` > `~/.workbuddy/projects`。
 
 ### 渲染卡片
 
@@ -142,9 +147,9 @@ python scripts/render_cards.py --data cards.json --out-dir ./cards --format jpg 
 
 | 参数 | 取值 | 说明 |
 | --- | --- | --- |
-| `--theme` | `coral` `ink` `tech` `mint` `sun` | 配色，默认珊瑚粉 |
-| `--size` | `1080x1440` / `1080x1920` | 画布比例，默认 3:4 |
-| `--scale` | 整数 | 输出倍率，2 = 2 倍高清 |
+| `--theme` | `coral` `ink` `tech` `mint` `sun` | 配色，默认珊瑚粉；写错会直接报错并列出可选值 |
+| `--size` | `1080x1440` / `1080x1920` | 画布比例，默认 3:4；版式以 1080 宽为基准，字号随宽度等比缩放 |
+| `--scale` | 整数 | 输出倍率，2 = 2 倍高清。要更高像素调它，不要靠放大 `--size` |
 | `--format` | `png` / `jpg` | JPG 需 Pillow |
 | `--merge` | 开关 | 额外输出一张纵向拼接长图 |
 | `--brand` | 文本 | 卡片底部署名 |
@@ -201,6 +206,15 @@ chat-to-content/
 | 截图 | 系统装有 Chrome、Edge 或 Chromium；找不到时自动回退 Playwright |
 | Pillow | 可选，仅 `--format jpg` 与 `--merge` 需要 |
 
+浏览器探测顺序：环境变量 → 常见安装路径（系统级 + 用户级 `%LOCALAPPDATA%`）→ `PATH` 里的命令。装在非标准位置时不用改代码，设一个环境变量指过去即可：
+
+```bash
+CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  python scripts/render_cards.py --data cards.json --out-dir ./cards
+```
+
+`CHROMIUM_PATH`、`BROWSER` 同样可用。
+
 Playwright 回退方案需要额外安装：
 
 ```bash
@@ -210,7 +224,7 @@ pip install playwright && playwright install chromium
 ## 常见问题
 
 **Q：`--check` 返回 `ok: false`，但明明聊了很多。**
-工作区目录被移动过导致 slug 对不上。用 `--list 10` 找到最近的会话，再用 `--session-file` 指定。
+工作区目录被移动过导致 slug 对不上，或者会话记录不在默认位置。先确认 `--projects-root` / `WORKBUDDY_PROJECTS` 指向正确；仍不对就用 `--list 10` 找到最近的会话，再用 `--session-file` 指定。
 
 **Q：贴图上的字有点糊。**
 检查是否用了 `--scale 1`（默认 2 倍）。另外不要改用文生图模型生成卡片，中文排版不可控。
@@ -222,7 +236,7 @@ pip install playwright && playwright install chromium
 可以。`--brand` 改署名，`--theme` 换配色，或直接改 `scripts/render_cards.py` 里的 `THEMES` 字典新增一套。
 
 **Q：适配哪些客户端？**
-所有支持 `SKILL.md` + YAML frontmatter 的客户端。会话记录路径按需在 `extract_session.py` 的 `PROJECTS_ROOT` 处调整。
+所有支持 `SKILL.md` + YAML frontmatter 的客户端。会话记录目录默认为 `~/.workbuddy/projects`，其它客户端用 `--projects-root` 或环境变量 `WORKBUDDY_PROJECTS` 指过去，不用改代码。
 
 ## 许可证
 

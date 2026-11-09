@@ -12,11 +12,17 @@ extract_session.py - 读取本机 WorkBuddy 会话记录（.jsonl），判定是
     python extract_session.py --out-dir ./_session_dump
 
     # 指定其它会话（默认取当前工作区对应的最新会话）
-    python extract_session.py --project-slug c-users-wzq-WorkBuddy-2026-10-26-16-38-03 --out-dir ./dump
-    python extract_session.py --session-file "C:/.../xxx.jsonl" --out-dir ./dump
+    python extract_session.py --project-slug <工作区slug> --out-dir ./dump
+    python extract_session.py --session-file "/path/to/<会话ID>.jsonl" --out-dir ./dump
+
+    # 会话记录不在默认位置时，显式指定根目录
+    python extract_session.py --projects-root "D:/data/projects" --check
 
     # 列出最近 N 个可用会话
     python extract_session.py --list 10
+
+会话根目录按以下优先级确定:
+    --projects-root  >  环境变量 WORKBUDDY_PROJECTS  >  ~/.workbuddy/projects
 
 判断规则（--check）:
     ok=True  需要同时满足：找到会话文件 / 用户发言 >= 1 条 / 助手回复 >= 1 条 /
@@ -36,7 +42,8 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 
-PROJECTS_ROOT = os.path.join(os.path.expanduser("~"), ".workbuddy", "projects")
+DEFAULT_PROJECTS_ROOT = os.path.join(os.path.expanduser("~"), ".workbuddy", "projects")
+PROJECTS_ROOT_ENV = "WORKBUDDY_PROJECTS"
 
 NOISE_PREFIXES = (
     "<command-name>",
@@ -51,8 +58,22 @@ TAG_RE = re.compile(
 )
 
 
+def resolve_projects_root(cli_value=None):
+    """会话根目录：--projects-root > 环境变量 WORKBUDDY_PROJECTS > ~/.workbuddy/projects"""
+    if cli_value:
+        return os.path.abspath(os.path.expanduser(cli_value))
+    env = os.environ.get(PROJECTS_ROOT_ENV)
+    if env:
+        return os.path.abspath(os.path.expanduser(env))
+    return DEFAULT_PROJECTS_ROOT
+
+
 def slugify_path(path):
-    """C:/Users/wzq/WorkBuddy/2026-10-26-16-38-03 -> c-users-wzq-WorkBuddy-2026-10-26-16-38-03"""
+    """把工作区绝对路径转换成会话目录名。
+
+    例：/home/alice/Wedding/2026-01-01-09-00 -> -home-alice-wedding-2026-01-01-09-00
+    规则：去掉盘符冒号，把路径分隔符换成连字符，统一小写。
+    """
     p = os.path.abspath(path).replace("\\", "/")
     return p.replace(":", "").replace("/", "-").lower()
 
@@ -142,9 +163,9 @@ def parse_session(path):
     return meta, turns
 
 
-def find_session_files(project_slug=None, limit=None):
+def find_session_files(projects_root, project_slug=None, limit=None):
     """返回 [(mtime, path)]，按修改时间倒序。"""
-    root = PROJECTS_ROOT
+    root = projects_root
     if not os.path.isdir(root):
         return []
     hits = []
@@ -168,17 +189,17 @@ def find_session_files(project_slug=None, limit=None):
     return hits[:limit] if limit else hits
 
 
-def resolve_session(args):
+def resolve_session(args, projects_root):
     if args.session_file:
         p = os.path.abspath(args.session_file)
         return p if os.path.isfile(p) else None
     slug = args.project_slug or (slugify_path(args.cwd) if args.cwd else None)
-    hits = find_session_files(slug)
+    hits = find_session_files(projects_root, slug)
     if hits:
         return hits[0][1]
     # 指定项目没命中时，退回全局最近会话，但只在工作区推导失败时允许
     if not args.project_slug:
-        hits = find_session_files(None)
+        hits = find_session_files(projects_root, None)
         return hits[0][1] if hits else None
     return None
 
@@ -248,6 +269,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--check", action="store_true", help="只做前置检查，输出 JSON")
     ap.add_argument("--out-dir", help="抽取 transcript.md 的输出目录")
+    ap.add_argument("--projects-root", help="会话记录根目录，默认 %s（也可用环境变量 %s 设置）" % (DEFAULT_PROJECTS_ROOT, PROJECTS_ROOT_ENV))
     ap.add_argument("--project-slug")
     ap.add_argument("--session-file")
     ap.add_argument("--cwd", default=os.getcwd())
@@ -258,10 +280,11 @@ def main():
     ap.add_argument("--max-chars", type=int, default=24000)
     ap.add_argument("--list", type=int, metavar="N", help="列出最近 N 个会话")
     args = ap.parse_args()
+    projects_root = resolve_projects_root(args.projects_root)
 
     if args.list:
         rows = []
-        for mtime, fp in find_session_files(args.project_slug, args.list):
+        for mtime, fp in find_session_files(projects_root, args.project_slug, args.list):
             try:
                 meta, turns = parse_session(fp)
                 u, a, c = stats(turns)
@@ -280,13 +303,13 @@ def main():
         print(json.dumps(rows, ensure_ascii=False, indent=2))
         return 0
 
-    path = resolve_session(args)
+    path = resolve_session(args, projects_root)
     if not path or not os.path.isfile(path):
         print(
             json.dumps(
                 {
                     "ok": False,
-                    "reason": "未找到可读的会话记录文件（已查找 %s）" % PROJECTS_ROOT,
+                    "reason": "未找到可读的会话记录文件（已查找 %s）" % projects_root,
                     "session_file": None,
                 },
                 ensure_ascii=False,
@@ -303,6 +326,7 @@ def main():
         "session_id": meta["session_id"],
         "title": meta["title"],
         "cwd": meta["cwd"],
+        "projects_root": projects_root,
         "started_at": fmt_ts(meta["first_ts"]),
         "ended_at": fmt_ts(meta["last_ts"]),
         "user_turns": u,

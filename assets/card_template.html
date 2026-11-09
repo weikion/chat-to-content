@@ -11,7 +11,9 @@
     --accent-soft:{{ACCENT_SOFT}};
     --panel:{{PANEL}};
     --line:{{LINE}};
-    --font: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "微软雅黑", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif;
+    /* 版式以 1080 宽为基准；--k 由脚本按实际画布宽度算出，所有尺寸乘它，换画布不会走形 */
+    --k:{{K}};
+    --font: "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei", "微软雅黑", "Source Han Sans SC", "Noto Sans CJK SC", "Noto Sans SC", sans-serif;
     --num-font: "Georgia", "Times New Roman", var(--font);
   }
   *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
@@ -22,7 +24,9 @@
     padding:{{PAD}}px;display:flex;flex-direction:column;
   }
   .card::after{
-    content:"";position:absolute;right:-140px;top:-140px;width:420px;height:420px;
+    content:"";position:absolute;
+    right:calc(-140px * var(--k));top:calc(-140px * var(--k));
+    width:calc(420px * var(--k));height:calc(420px * var(--k));
     border-radius:50%;background:var(--accent);opacity:.10;
   }
   .wrap{position:relative;z-index:2;display:flex;flex-direction:column;height:100%;}
@@ -31,55 +35,76 @@
   .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:{{PAD}}px;}
   .kicker{
     align-self:flex-start;
-    display:inline-flex;align-items:center;gap:10px;
+    display:inline-flex;align-items:center;gap:calc(10px * var(--k));
     background:var(--accent-soft);color:var(--accent);
-    font-size:26px;font-weight:700;letter-spacing:2px;
-    padding:10px 22px;border-radius:999px;
+    font-size:calc(26px * var(--k));font-weight:700;letter-spacing:calc(2px * var(--k));
+    padding:calc(10px * var(--k)) calc(22px * var(--k));border-radius:999px;
   }
-  .brand{font-size:24px;color:var(--muted);letter-spacing:1px;}
+  .brand{font-size:calc(24px * var(--k));color:var(--muted);letter-spacing:calc(1px * var(--k));}
   .foot{margin-top:auto;display:flex;align-items:center;justify-content:space-between;
-        font-size:24px;color:var(--muted);border-top:2px solid var(--line);padding-top:28px;}
-  .foot .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:12px;}
+        font-size:calc(24px * var(--k));color:var(--muted);
+        border-top:calc(2px * var(--k)) solid var(--line);padding-top:calc(28px * var(--k));}
+  .foot .dot{width:calc(14px * var(--k));height:calc(14px * var(--k));border-radius:50%;
+             background:var(--accent);display:inline-block;margin-right:calc(12px * var(--k));}
 
   /* cover */
-  .cover-title{font-size:{{COVER_TITLE}}px;line-height:1.28;font-weight:800;letter-spacing:1px;margin:44px 0 0;}
+  .cover-title{font-size:{{COVER_TITLE}}px;line-height:1.28;font-weight:800;
+               letter-spacing:calc(1px * var(--k));margin:calc(44px * var(--k)) 0 0;}
   .cover-title em{font-style:normal;color:var(--accent);}
-  .cover-sub{margin-top:36px;font-size:34px;line-height:1.7;color:var(--muted);font-weight:500;}
-  .cover-rule{width:120px;height:8px;background:var(--accent);border-radius:99px;margin:44px 0 0;}
+  .cover-sub{margin-top:calc(36px * var(--k));font-size:calc(34px * var(--k));
+             line-height:1.7;color:var(--muted);font-weight:500;}
+  .cover-rule{width:calc(120px * var(--k));height:calc(8px * var(--k));
+              background:var(--accent);border-radius:99px;margin:calc(44px * var(--k)) 0 0;}
 
   /* generic heading */
-  .h2{font-size:52px;font-weight:800;margin:0 0 12px;letter-spacing:1px;}
-  .h2sub{font-size:28px;color:var(--muted);margin-bottom:52px;}
+  .h2{font-size:calc(52px * var(--k));font-weight:800;margin:0 0 calc(12px * var(--k));
+      letter-spacing:calc(1px * var(--k));}
+  .h2sub{font-size:calc(28px * var(--k));color:var(--muted);margin-bottom:calc(52px * var(--k));}
 
   /* points */
-  .point{display:flex;gap:28px;background:var(--panel);border-radius:28px;padding:34px 36px;margin-bottom:28px;}
-  .point .n{flex:0 0 auto;width:74px;height:74px;border-radius:22px;background:var(--accent-soft);
-            color:var(--accent);font-family:var(--num-font);font-size:36px;font-weight:800;
+  .point{display:flex;gap:calc(28px * var(--k));background:var(--panel);
+         border-radius:calc(28px * var(--k));
+         padding:calc(34px * var(--k)) calc(36px * var(--k));
+         margin-bottom:calc(28px * var(--k));}
+  .point .n{flex:0 0 auto;width:calc(74px * var(--k));height:calc(74px * var(--k));
+            border-radius:calc(22px * var(--k));background:var(--accent-soft);
+            color:var(--accent);font-family:var(--num-font);font-size:calc(36px * var(--k));font-weight:800;
             display:flex;align-items:center;justify-content:center;}
-  .point .tt{font-size:36px;font-weight:800;margin-bottom:12px;line-height:1.4;}
-  .point .dd{font-size:29px;line-height:1.66;color:var(--muted);}
+  .point .tt{font-size:calc(36px * var(--k));font-weight:800;
+             margin-bottom:calc(12px * var(--k));line-height:1.4;}
+  .point .dd{font-size:calc(29px * var(--k));line-height:1.66;color:var(--muted);}
 
   /* quote */
   .quote-box{display:flex;flex-direction:column;justify-content:center;}
-  .qm{font-family:var(--num-font);font-size:140px;line-height:.6;color:var(--accent);opacity:.35;}
-  .qtext{font-size:{{QUOTE_SIZE}}px;line-height:1.62;font-weight:800;margin-top:36px;letter-spacing:1px;}
-  .qtext em{font-style:normal;color:var(--accent);background:var(--accent-soft);padding:0 8px;border-radius:8px;}
-  .qwho{margin-top:44px;font-size:28px;color:var(--muted);}
+  .qm{font-family:var(--num-font);font-size:calc(140px * var(--k));line-height:.6;
+      color:var(--accent);opacity:.35;}
+  .qtext{font-size:{{QUOTE_SIZE}}px;line-height:1.62;font-weight:800;
+         margin-top:calc(36px * var(--k));letter-spacing:calc(1px * var(--k));}
+  .qtext em{font-style:normal;color:var(--accent);background:var(--accent-soft);
+            padding:0 calc(8px * var(--k));border-radius:calc(8px * var(--k));}
+  .qwho{margin-top:calc(44px * var(--k));font-size:calc(28px * var(--k));color:var(--muted);}
 
   /* checklist */
-  .ck{display:flex;gap:24px;align-items:flex-start;margin-bottom:34px;}
-  .ck .tick{flex:0 0 auto;width:48px;height:48px;border-radius:14px;background:var(--accent-soft);
-            color:var(--accent);font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;}
-  .ck .txt{font-size:32px;line-height:1.62;padding-top:2px;}
+  .ck{display:flex;gap:calc(24px * var(--k));align-items:flex-start;
+      margin-bottom:calc(34px * var(--k));}
+  .ck .tick{flex:0 0 auto;width:calc(48px * var(--k));height:calc(48px * var(--k));
+            border-radius:calc(14px * var(--k));background:var(--accent-soft);
+            color:var(--accent);font-size:calc(30px * var(--k));font-weight:800;
+            display:flex;align-items:center;justify-content:center;}
+  .ck .txt{font-size:calc(32px * var(--k));line-height:1.62;padding-top:calc(2px * var(--k));}
   .ck .txt b{color:var(--accent);}
 
   /* conclusion */
-  .lead{font-size:33px;line-height:1.8;margin-bottom:40px;}
-  .hlbox{background:var(--accent-soft);border-left:12px solid var(--accent);border-radius:20px;
-         padding:40px 44px;font-size:36px;line-height:1.66;font-weight:700;}
+  .lead{font-size:calc(33px * var(--k));line-height:1.8;margin-bottom:calc(40px * var(--k));}
+  .hlbox{background:var(--accent-soft);border-left:calc(12px * var(--k)) solid var(--accent);
+         border-radius:calc(20px * var(--k));
+         padding:calc(40px * var(--k)) calc(44px * var(--k));
+         font-size:calc(36px * var(--k));line-height:1.66;font-weight:700;}
   .hlbox em{font-style:normal;color:var(--accent);}
-  .tags{margin-top:40px;display:flex;flex-wrap:wrap;gap:16px;}
-  .tag{background:var(--panel);border:2px solid var(--line);border-radius:999px;padding:12px 24px;font-size:26px;color:var(--muted);}
+  .tags{margin-top:calc(40px * var(--k));display:flex;flex-wrap:wrap;gap:calc(16px * var(--k));}
+  .tag{background:var(--panel);border:calc(2px * var(--k)) solid var(--line);border-radius:999px;
+       padding:calc(12px * var(--k)) calc(24px * var(--k));
+       font-size:calc(26px * var(--k));color:var(--muted);}
 </style>
 </head>
 <body>

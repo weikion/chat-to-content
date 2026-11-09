@@ -42,8 +42,9 @@ python "<SKILL_DIR>/scripts/extract_session.py" --check
 python "<SKILL_DIR>/scripts/extract_session.py" --out-dir "<输出目录>/_source"
 ```
 
-- `<SKILL_DIR>` = 本技能目录（`~/.workbuddy/skills/chat-to-content`）。
-- Python 解释器优先用托管版本 `C:/Users/wzq/.workbuddy/binaries/python/versions/3.13.12/python.exe`，不存在时退回 `python`。
+- `<SKILL_DIR>` = 本技能所在目录（含本文件的目录），不要写死成某个绝对路径。
+- Python 解释器用当前环境可用的 `python3`（Windows 上为 `python`）；宿主若自带托管解释器，优先用托管版本，找不到就退回系统 `python`。
+- 若会话记录不在默认位置，用 `--projects-root <目录>` 或环境变量 `WORKBUDDY_PROJECTS` 指定。
 - `--check` 输出 JSON：`ok=true` 才继续；`ok=false` 时把 `reason` 原话转述给用户并结束。
 - `--out-dir` 会把对话抽取成 `transcript.md`（已过滤工具调用、思维链与系统注入内容），后续写作以它为准。上下文已被压缩时，这份文件是唯一可靠素材源。
 
@@ -100,7 +101,7 @@ python "<SKILL_DIR>/scripts/extract_session.py" --out-dir "<输出目录>/_sourc
 - 设「重点总结」段落，用短句清单收口。
 - 结尾给互动引导（提问式，不要「欢迎留言讨论」这类模板句）。
 - 语言：口语化短段落，避免术语堆砌；技术名词首次出现时给一句人话解释。
-- 需要贴合用户既有风格时，先调用其风格档案技能（如 `my-style-writer`、`shanguan-wechat-creator`）；不可用则按上述语感执行，并在交付说明里注明。
+- 需要贴合用户既有风格时，先看用户装了哪套风格档案技能并调用它（不要写死具体技能名，也不要在用户没装时报错）；不可用则按上述语感执行，并在交付说明里注明。
 - 篇幅 1500-2500 字，宁短勿水。
 
 ### Step 5 · 生成贴图（模式为 `cards` / `both` 时）
@@ -137,10 +138,10 @@ python "<SKILL_DIR>/scripts/render_cards.py" --data "cards.json" --out-dir "<输
 
 | 现象 | 原因 | 处理 |
 | --- | --- | --- |
-| `--check` 返回 `ok=false`，但明明聊了很多 | 工作区目录被移动，slug 对不上 | 用 `--list 10` 找最近会话，再用 `--session-file` 指定 |
+| `--check` 返回 `ok=false`，但明明聊了很多 | 工作区目录被移动，slug 对不上；或会话不在默认位置 | 先确认 `--projects-root` / `WORKBUDDY_PROJECTS` 指向正确；再用 `--list 10` 找最近会话，用 `--session-file` 指定 |
 | `transcript.md` 里混进大段工具输出 | 素材本身含长日志 | 写作时只取结论行，不要把日志搬进文章 |
 | 卡片文字被裁切 | 单卡条目过多 | 拆成两张，或压缩每条描述字数 |
-| 截图脚本失败 | 本机无 Edge/Chrome 且无 playwright | 如实报告缺依赖，请用户装其一；不要用文生图模型顶替（文字会糊） |
+| 截图脚本失败 | 本机无 Edge/Chrome 且无 playwright；或浏览器装在非标准位置 | 先设 `CHROME_PATH` 指向浏览器可执行文件再试；仍失败则如实报告缺依赖，请用户装其一。不要用文生图模型顶替（文字会糊） |
 | 输出文件名乱码 | 命名未用 slug | 严守 Step 3 命名规范 |
 
 ## 资源索引
